@@ -1,0 +1,151 @@
+/* Begin Reset */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video
+{
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section
+{
+	display: block;
+}
+body
+{
+	line-height: 1;
+}
+ol, ul
+{
+	list-style: none;
+}
+blockquote, q
+{
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after
+{
+	content: '';
+	content: none;
+}
+table
+{
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+/* End Reset */
+
+$mainColor: #FF9900;
+$secColor: #3299BB;
+$gray1: #424242;
+$gray2: #BCBCBC;
+$gray3: #E9E9E9;
+
+body
+{
+	font-family: 'Arimo', sans-serif;
+}
+
+a
+{
+	color: $secColor;
+}
+h1
+{
+	font-size: 2em;
+	font-family: 'Oswald', sans-serif;
+	color: $mainColor;
+	a
+	{
+		color: $mainColor;
+		text-decoration: none;
+	}
+}
+input[type="text"], input[type="email"], input[type="password"]
+{
+	border: 1px solid $gray3;
+	margin: 0 0 3px;
+}
+label
+{
+	font-size: .8em;
+	color: $gray1;
+}
+
+.banner
+{
+	height: 42px;
+	border-bottom: 1px solid $gray3;
+	box-shadow: 0 2px 5px $gray2;
+	h1
+	{
+		font-size: 2em;
+		margin: 3px 9px;
+	}
+}
+
+.logo
+{
+	float: left;
+}
+
+.page
+{
+	margin: 10px auto;
+	max-width: 40em;
+	text-align: center;
+}
+
+.pop_tab
+{
+	position: relative;
+	float:right;
+	border-left: 1px solid $gray3;
+	a
+	{
+		padding: 10px 3px;
+		margin: 3px 0;
+		display: inline-block;
+		text-decoration: none;
+		min-width: 100px;
+		text-align: center;
+		&:hover
+		{
+			text-decoration: underline;
+		}
+	}
+	form
+	{
+		display: none;
+		position: absolute;
+		top: 42px;
+		right: -1px;
+		padding: 16px 12px;
+		background-color: #ffffff;
+		border: 1px solid $gray3;
+	}
+	&.open form
+	{
+		display: block;
+	}
+	&:first-of-type
+	{
+	border-right: 1px solid $gray3;
+	}
+}

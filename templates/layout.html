@@ -1,0 +1,45 @@
+<!doctype html>
+<title>WCSU Gaming Club</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/style.css') }}">
+<link href='http://fonts.googleapis.com/css?family=Arimo' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Oswald:300' rel='stylesheet' type='text/css'>
+<script type="text/javascript" src="{{ url_for('static', filename='js/poptab.js') }}"></script>
+<header class="banner">
+	<h1 class="logo"><a href="{{ url_for('display_news') }}">WCSU Gaming Club</a></h1>
+	{% if not session.logged_in %}
+		<div id=login_form class=pop_tab>
+			<a href="#">Login</a>
+			<form action="{{ url_for('login') }}" method=post>
+				<label>Username:</label>
+				<input type=text name=username>
+				<label>Password:</label>
+				<input type=password name=password>
+				<input type=submit value=Login>
+			</form>
+		</div> 
+		<div id=register_form class=pop_tab>
+			<a href="#">Register</a>
+			<form action="{{ url_for('register') }}" method=post>
+				<label>Username:</label>
+				<input type=text name=username>
+				<label>Password:</label>
+				<input type=password name=password>
+				<label>Password Again:</label>
+				<input type=password name=password2>
+				<label>Email:</label>
+				<input type=email name=email>
+				<input type=submit value=Register>
+			</form>
+		</div>
+	{% else %}
+		<div id=register_form class=pop_tab>
+			<a href="{{ url_for('logout') }}">Log Out</a>
+		</div>
+	{% endif %}
+</header>
+<div class=page>
+	{% for message in get_flashed_messages() %}
+		<div class=flash>{{ message }}</div>
+	{% endfor %}
+	{% block body %}{% endblock %}
+</div>
