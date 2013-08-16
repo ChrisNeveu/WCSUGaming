@@ -4,6 +4,7 @@
 <link href='http://fonts.googleapis.com/css?family=Arimo' rel='stylesheet' type='text/css'>
 <link href='http://fonts.googleapis.com/css?family=Oswald:300' rel='stylesheet' type='text/css'>
 <script type="text/javascript" src="{{ url_for('static', filename='js/poptab.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/autoslug.js') }}"></script>
 <header class="banner">
 	<h1 class="logo"><a href="{{ url_for('display_news') }}">WCSU Gaming Club</a></h1>
 	{% if not session.logged_in %}

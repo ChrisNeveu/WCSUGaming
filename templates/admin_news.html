@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block body %}
+	<a href="{{ url_for('add_article') }}">New Article</a>
+	<table class=articles>
+		<thead>
+			<tr>
+				<th>Title</th><th>Slug</th><th>Post Date</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for article in articles %}
+				<tr>
+					<td><a href="{{ url_for('edit_article', slug=article.slug) }}">{{article.title}}</a></td>
+					<td>{{ article.slug }}</td>
+					<td>{{ article.posted }}</td>
+				</tr>
+			{% else %}
+				<tr><td colspan="3">No news has been posted.</td></tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

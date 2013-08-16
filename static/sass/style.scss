@@ -88,6 +88,50 @@ label
 	color: $gray1;
 }
 
+table
+{
+	text-align: left;
+	width: 40em;
+	margin: 6px 0;
+	thead
+	{
+		background-color: $mainColor;
+		th
+		{
+			padding: 6px;
+			font-weight: bold;
+			color: #ffffff;
+		}
+	}
+	tbody
+	{
+		tr
+		{
+			&:nth-child(even)
+			{
+				background-color: $gray3;
+			}
+		}
+	}
+	td
+	{
+		padding: 6px;
+	}
+}
+
+form
+{
+	text-align: left;
+	label
+	{
+		display: block;
+	}
+	input
+	{
+		display: block;
+	}
+}
+
 .banner
 {
 	height: 42px;
