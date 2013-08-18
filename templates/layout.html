@@ -33,14 +33,14 @@
 			</form>
 		</div>
 	{% else %}
-		<div id=register_form class=pop_tab>
+		<div class=pop_tab>
 			<a href="{{ url_for('logout') }}">Log Out</a>
 		</div>
 	{% endif %}
 </header>
+{% for message in get_flashed_messages() %}
+	<div class=flash>{{ message }}</div>
+{% endfor %}
 <div class=page>
-	{% for message in get_flashed_messages() %}
-		<div class=flash>{{ message }}</div>
-	{% endfor %}
 	{% block body %}{% endblock %}
 </div>

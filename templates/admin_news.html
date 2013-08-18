@@ -1,22 +1,26 @@
 {% extends "layout.html" %}
 {% block body %}
-	<a href="{{ url_for('add_article') }}">New Article</a>
-	<table class=articles>
-		<thead>
-			<tr>
-				<th>Title</th><th>Slug</th><th>Post Date</th>
-			</tr>
-		</thead>
-		<tbody>
-			{% for article in articles %}
+	<form action="{{ url_for('bulk_edit_articles') }}" method=post>
+		<a href="{{ url_for('add_article') }}" class="button">New Article</a>
+		<table class=articles>
+			<thead>
 				<tr>
-					<td><a href="{{ url_for('edit_article', slug=article.slug) }}">{{article.title}}</a></td>
-					<td>{{ article.slug }}</td>
-					<td>{{ article.posted }}</td>
+					<th class="mini-column"><th>Title</th><th>Slug</th><th>Post Date</th>
 				</tr>
-			{% else %}
-				<tr><td colspan="3">No news has been posted.</td></tr>
-			{% endfor %}
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+				{% for article in articles %}
+					<tr>
+						<td class="mini_column"><input type="checkbox" value="{{ article.slug }}" name="bulk[]"></td>
+						<td><a href="{{ url_for('edit_article', slug=article.slug) }}">{{article.title}}</a></td>
+						<td>{{ article.slug }}</td>
+						<td>{{ article.posted }}</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="3">No news has been posted.</td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<input type=submit value="Delete Selected Pages" class=button>
+	</form>
 {% endblock %}

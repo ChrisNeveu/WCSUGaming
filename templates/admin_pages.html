@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block body %}
+	<form action="{{ url_for('bulk_edit_pages') }}" method=post>
+		<a href="{{ url_for('add_page') }}" class=button>New Page</a>
+		<table class=articles>
+			<thead>
+				<tr>
+					<th class="mini-column"><th>Title</th><th>Slug</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for page in pages %}
+					<tr>
+						<td class="mini_column"><input type="checkbox" value="{{ page.slug }}" name="bulk[]"></td>
+						<td><a href="{{ url_for('edit_page', slug=page.slug) }}">{{page.title}}</a></td>
+						<td>{{ page.slug }}</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="2">No news has been posted.</td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<input type=submit value="Delete Selected Pages" class=button>
+	</form>
+{% endblock %}

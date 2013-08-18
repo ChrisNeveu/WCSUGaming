@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block body %}
+	{% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+	{% if page %}
+	<form action="{{ url_for('edit_page', slug=page.slug) }}" method=post class=update-page>
+		<label>Title:</label>
+		<input type=text size=30 name=title id=title_field value="{{ page.title }}">
+		<label>Text:</label>
+		<textarea name=content rows=5 cols=40>{{ page.content }}</textarea>
+	{% else %}
+	<form action="{{ url_for('add_page') }}" method=post class=add-page>
+		<label>Title:</label>
+		<input type=text size=30 name=title id=title_field>
+		<label>Slug:</label>
+		<input type=text size=30 name=slug id=slug_field>
+		<label>Text:</label>
+		<textarea name=content rows=5 cols=40></textarea>
+	{% endif %}
+		<input type=submit value=Publish>
+	</form>
+{% endblock %}

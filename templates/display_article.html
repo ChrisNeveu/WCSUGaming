@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block body %}
+	<article class=single>
+		<header>
+			<h2>{{ article.title }}</h2>
+			<p class="byline">Posted on {{ article.posted }}</p>
+		</header>
+		<div class="article-content">
+			{{ article.content|safe }}
+		</div>
+	</article>
+{% endblock %}

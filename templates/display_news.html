@@ -1,21 +1,20 @@
 {% extends "layout.html" %}
 {% block body %}
-	{% if session.logged_in %}
-		<form action="" method=post class=add-entry>
-			<dl>
-				<dt>Title:
-				<dd><input type=text size=30 name=title>
-				<dt>Text:
-				<dd><textarea name=text rows=5 cols=40></textarea>
-				<dd><input type=submit value=Share>
-			</dl>
-		</form>
-	{% endif %}
 	<ul class=entries>
-	{% for entry in entries %}
-		<li><h2>{{entry.title}}</h2>{{ entry.text|safe }}
+	{% for article in articles %}
+		<article>
+		<header>
+			<h2><a href="{{ url_for('display_article', slug=article.slug) }}">{{ article.title }}</a></h2>
+		</header>
+		<div class="article-content">
+			{{ article.content|safe }}
+		</div>
+		<footer>
+			<aside>Posted on {{ article.posted }}</aside>
+		</footer>
+	</article>
 	{% else %}
-		<li><em>Unbelievable.  No entries here so far</em>
+		<article><em>Unbelievable.  No entries here so far</em></article>
 	{% endfor %}
 	</ul>
 {% endblock %}

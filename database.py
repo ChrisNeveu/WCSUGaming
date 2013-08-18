@@ -74,7 +74,53 @@ def get_article(slug):
 def get_articles(limit=None):
     if limit:
         req = g.db.execute('SELECT title, slug, content, posted FROM \
-                            articles LIMIT ?, ?', [limit[0], limit[1]])
+                            articles ORDER BY posted DESC LIMIT ?, ?',
+                           [limit[0], limit[1]])
     else:
-        req = g.db.execute('SELECT title, slug, posted FROM articles')
+        req = g.db.execute('SELECT title, slug, content, posted \
+                            FROM articles ORDER BY posted DESC')
+    return req.fetchall()
+
+# String, String, String -> (Bool, Maybe Error)
+def insert_page(slug, title, content):
+    try:
+        g.db.execute('INSERT INTO pages (slug, title, content) \
+                      VALUES (?, ?, ?)', [slug, title, content])
+        g.db.commit()
+        return (True, None)
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# String, String, String -> (Bool, Maybe Error)
+def update_page(slug, title, content):
+    try:
+        g.db.execute('UPDATE pages SET title=?, content=? \
+                      WHERE slug=?', [title, content, slug])
+        g.db.commit()
+        return (True, None)
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# String -> (Bool, Either List Error)
+def get_page(slug):
+    try:
+        req = g.db.execute('SELECT title, content FROM \
+                            pages WHERE slug=?', [slug])
+        article=req.fetchone()
+        if article:
+            return (True, article)
+        else:
+            return (False, "No page with that slug.")
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# (Int, Int) -> List
+def get_pages(limit=None):
+    if limit:
+        req = g.db.execute('SELECT title, slug, content FROM \
+                            pages ORDER BY title ASC LIMIT ?, ?',
+                           [limit[0], limit[1]])
+    else:
+        req = g.db.execute('SELECT title, slug, content FROM pages \
+                            ORDER BY title ASC')
     return req.fetchall()
