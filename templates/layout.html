@@ -38,6 +38,15 @@
 		</div>
 	{% endif %}
 </header>
+{% if pages %}
+	<nav class="page_list">
+		<ul>
+			{% for page in pages %}
+				<li><a href="/{{ page.slug }}">{{ page.title }}</a></li>
+			{% endfor %}
+		</ul>
+	<nav>
+{% endif %}
 {% for message in get_flashed_messages() %}
 	<div class=flash>{{ message }}</div>
 {% endfor %}

@@ -11,12 +11,12 @@
 			<tbody>
 				{% for page in pages %}
 					<tr>
-						<td class="mini_column"><input type="checkbox" value="{{ page.slug }}" name="bulk[]"></td>
+						<td class="mini_column"><input type="checkbox" value="{{ page.slug }}" name="slugs"></td>
 						<td><a href="{{ url_for('edit_page', slug=page.slug) }}">{{page.title}}</a></td>
 						<td>{{ page.slug }}</td>
 					</tr>
 				{% else %}
-					<tr><td colspan="2">No news has been posted.</td></tr>
+					<tr><td colspan="2">No pages have been created.</td></tr>
 				{% endfor %}
 			</tbody>
 		</table>

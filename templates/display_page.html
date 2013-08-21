@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block body %}
+	<article class=single>
+		<header>
+			<h2>{{ page.title }}</h2>
+		</header>
+		<div class="page-content">
+			{{ page.content|safe }}
+		</div>
+	</article>
+{% endblock %}

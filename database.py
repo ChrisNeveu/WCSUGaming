@@ -38,6 +38,58 @@ def register_user(username, password, email):
         return (False, "An error occurred: " + e.args[0])
 
 # String, String, String, String -> (Bool, Maybe Error)
+def update_user(username, password, email, privilege):
+    try:
+        if password is None:
+            g.db.execute('UPDATE users SET email=?, privilege=? \
+                          WHERE username=?',
+                         [email, privilege, username])
+        else:
+            hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+            g.db.execute('UPDATE users SET password=?, \
+                          email=?, privilege=? \
+                          WHERE username=?',
+                         [hashed, email, privilege, username])
+        g.db.commit()
+        return (True, None)
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# String -> (Bool, Maybe Error)
+def delete_user(username):
+    try:
+        g.db.execute('DELETE FROM users WHERE username=?',
+                     [username])
+        g.db.commit()
+        return (True, None)
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# String -> (Bool, Either Int Error)
+def get_user(username):
+    try:
+        req = g.db.execute('SELECT username, email, privilege \
+                            FROM users WHERE username=?', [username])
+        user = req.fetchone()
+        if user:
+            return (True, user)
+        else:
+            return (False, "No user with that name")
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# (Int, Int) -> List
+def get_users(limit=None):
+    if limit:
+        req = g.db.execute('SELECT username, email, privilege FROM \
+                            users ORDER BY username ASC LIMIT ?, ?',
+                           [limit[0], limit[1]])
+    else:
+        req = g.db.execute('SELECT username, email, privilege FROM users \
+                            ORDER BY username ASC')
+    return req.fetchall()
+
+# String, String, String, String -> (Bool, Maybe Error)
 def insert_article(slug, title, content, posted):
     try:
         g.db.execute('INSERT INTO articles (slug, title, content) \
@@ -52,6 +104,16 @@ def update_article(slug, title, content, posted):
     try:
         g.db.execute('UPDATE articles SET title=?, content=? \
                       WHERE slug=?', [title, content, slug])
+        g.db.commit()
+        return (True, None)
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# String -> (Bool, Maybe Error)
+def delete_article(slug):
+    try:
+        g.db.execute('DELETE FROM articles WHERE slug=?',
+                     [slug])
         g.db.commit()
         return (True, None)
     except sqlite3.Error as e:
@@ -101,14 +163,24 @@ def update_page(slug, title, content):
     except sqlite3.Error as e:
         return (False, "An error occurred: " + e.args[0])
 
+# String -> (Bool, Maybe Error)
+def delete_page(slug):
+    try:
+        g.db.execute('DELETE FROM pages WHERE slug=?',
+                     [slug])
+        g.db.commit()
+        return (True, None)
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
 # String -> (Bool, Either List Error)
 def get_page(slug):
     try:
         req = g.db.execute('SELECT title, content FROM \
                             pages WHERE slug=?', [slug])
-        article=req.fetchone()
-        if article:
-            return (True, article)
+        page=req.fetchone()
+        if page:
+            return (True, page)
         else:
             return (False, "No page with that slug.")
     except sqlite3.Error as e:
