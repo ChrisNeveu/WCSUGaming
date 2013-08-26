@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block body %}
+	{% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+	{% if post %}
+	<form action="{{ url_for('edit_post', post_id=post.id) }}" method=post class=update-post>
+		<label>Title:</label>
+		<input type=text size=30 name=title id=title_field value="{{ post.title }}">
+		<label>Text:</label>
+		<textarea name=content rows=5 cols=40>{{ post.content }}</textarea>
+	{% elif parent %}
+	<form action="{{ url_for('add_reply', parent_id=parent) }}" method=post class=add-post>
+		<label>Title:</label>
+		<input type=text size=30 name=title id=title_field>
+		<label>Text:</label>
+		<textarea name=content rows=5 cols=40></textarea>
+		<input type=hidden name=author value="{{ session.name }}">
+		<input type=hidden name=parent value="{{ parent }}">
+	{% else %}
+	<form action="{{ url_for('add_post') }}" method=post class=add-post>
+		<label>Title:</label>
+		<input type=text size=30 name=title id=title_field>
+		<label>Text:</label>
+		<textarea name=content rows=5 cols=40></textarea>
+		<input type=hidden name=author value="{{ session.name }}">
+	{% endif %}
+		<input type=submit value=Publish>
+	</form>
+{% endblock %}

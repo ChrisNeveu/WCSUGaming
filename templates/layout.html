@@ -7,6 +7,16 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/autoslug.js') }}"></script>
 <header class="banner">
 	<h1 class="logo"><a href="{{ url_for('display_news') }}">WCSU Gaming Club</a></h1>
+	{% if pages %}
+		<nav class="page_list">
+			<ul>
+				{% for page in pages %}
+					<li><a href="/{{ page.slug }}">{{ page.title }}</a></li>
+				{% endfor %}
+				<li><a href="{{ url_for('display_threads') }}">Forum</a></li>
+			</ul>
+		<nav>
+	{% endif %}
 	{% if not session.logged_in %}
 		<div id=login_form class=pop_tab>
 			<a href="#">Login</a>
@@ -36,17 +46,14 @@
 		<div class=pop_tab>
 			<a href="{{ url_for('logout') }}">Log Out</a>
 		</div>
+		{% if session.privilege is sameas ADMIN_LEVEL %}
+			<div class=pop_tab>
+				<a href="{{ url_for('admin_home') }}">Admin</a>
+			</div>
+		{% endif %}
 	{% endif %}
 </header>
-{% if pages %}
-	<nav class="page_list">
-		<ul>
-			{% for page in pages %}
-				<li><a href="/{{ page.slug }}">{{ page.title }}</a></li>
-			{% endfor %}
-		</ul>
-	<nav>
-{% endif %}
+{% if error %}<div class=error>Error: {{ error }}</div>{% endif %}
 {% for message in get_flashed_messages() %}
 	<div class=flash>{{ message }}</div>
 {% endfor %}

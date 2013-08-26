@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block body %}
+	<a href="{{ url_for('add_post') }}" class=button>New Thread</a>
+	<ul class=posts>
+	{% for post in posts %}
+		<article>
+		<header>
+			<h2><a href="{{ url_for('display_post', post_id=post.id) }}">{{ post.title }}</a></h2>
+		</header>
+		<footer>
+			<aside>Posted on {{ post.posted }}</aside>
+		</footer>
+	</article>
+	{% else %}
+		<article><em>Unbelievable.  No entries here so far</em></article>
+	{% endfor %}
+	</ul>
+{% endblock %}

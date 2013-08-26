@@ -217,6 +217,31 @@ article
 	line-height: 1.2em;
 }
 
+.child
+{
+	margin: 20px 0 0 40px;
+	border-bottom: none;
+	&.child-1
+	{
+		margin-left: 0;
+	}
+	h3
+	{
+		font-weight: bold;
+	}
+	.byline
+	{
+		color: $gray2;
+		font-weight: normal;
+		margin: 0;
+		padding: 0;
+	}
+	footer
+	{
+		font-size: .8em;
+	}
+}
+
 .pop_tab
 {
 	position: relative;
@@ -258,18 +283,41 @@ article
 nav.page_list
 {
 	text-align: center;
-	margin: 20px;
 	li
 	{
-		display: inline-block;
-		&:after
+		position: relative;
+		float:left;
+		border-left: 1px solid $gray3;
+		a
 		{
-			content: " | ";
-			color: $secColor;
+			padding: 10px 3px;
+			margin: 3px 0;
+			display: inline-block;
+			text-decoration: none;
+			min-width: 100px;
+			text-align: center;
+			&:hover
+			{
+				text-decoration: underline;
+			}
 		}
-		&:last-child:after
+		form
 		{
-			content: none;
+			display: none;
+			position: absolute;
+			top: 42px;
+			right: -1px;
+			padding: 16px 12px;
+			background-color: #ffffff;
+			border: 1px solid $gray3;
+		}
+		&.open form
+		{
+			display: block;
+		}
+		&:last-of-type
+		{
+			border-right: 1px solid $gray3;
 		}
 	}
 	a
@@ -285,6 +333,18 @@ nav.page_list
 .flash
 {
 	background-color: $secColor;
+	color: #FFFFFF;
+	font-weight: bold;
+	margin: 10px 0;
+	padding: 5px;
+	text-align: center;
+	border-top: 1px solid $gray3;
+	border-bottom: 1px solid $gray3;
+}
+
+.error
+{
+	background-color: $mainColor;
 	color: #FFFFFF;
 	font-weight: bold;
 	margin: 10px 0;

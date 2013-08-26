@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block body %}
+	<article class=single>
+		<header>
+			<h2>{{ post.title }}</h2>
+			<p class="byline">
+				Posted by {{ post.author }} on {{ post.posted }}
+				{% if post.parent %}
+					 | <a href="{{ url_for('display_post', post_id=post.parent)}}">parent</a>
+				{% endif %}
+			</p>
+		</header>
+		<div class="post-content">
+			{{ post.content|safe }}
+		</div>
+		<footer>
+			{% if session.name == post.author %}
+				<a href="{{ url_for('edit_post', post_id=post.id) }}" class=button>Edit Post</a>
+			{% endif %}
+			<a href="{{ url_for('add_reply', parent_id=post.id) }}" class=button>Reply to Post</a>
+		</footer>
+	</article>
+	{% for child in post.children recursive %}
+		<article class="child child-{{ loop.depth }}">
+			<header>
+				<p class="byline">
+					Posted by {{ child.author }} on {{ child.posted }} | 
+					<a href="{{ url_for('display_post', post_id=child.id) }}">link</a>
+				</p>
+			</header>
+			<div class="post-content">
+				{{ child.content|safe }}
+			</div>
+			<footer>
+				{% if session.name == child.author %}
+					<a href="{{ url_for('edit_post', post_id=child.id) }}">Edit Post</a>
+				{% endif %}
+				<a href="{{ url_for('add_reply', parent_id=child.id) }}">Reply to Post</a>
+			</footer>
+		{% if child.children %}
+			{{ loop(child.children) }}
+		{% endif %}
+		</article>
+	{% endfor %}
+{% endblock %}
