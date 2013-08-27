@@ -39,7 +39,7 @@ def register_user(username, password, email):
     except sqlite3.Error as e:
         return (False, "An error occurred: " + e.args[0])
 
-# String, String, String, String -> (Bool, Maybe Error)
+# String, String, String, Int -> (Bool, Maybe Error)
 def update_user(username, password, email, privilege, active):
     try:
         if password is None:
@@ -91,7 +91,7 @@ def get_users(limit=None):
                             FROM users ORDER BY username ASC')
     return req.fetchall()
 
-# String, String, String, String -> (Bool, Maybe Error)
+# String, String, String, Datetime -> (Bool, Maybe Error)
 def insert_article(slug, title, content, posted):
     try:
         g.db.execute('INSERT INTO posts \
@@ -102,7 +102,7 @@ def insert_article(slug, title, content, posted):
     except sqlite3.Error as e:
         return (False, "An error occurred: " + e.args[0])
 
-# String, String, String, String -> (Bool, Maybe Error)
+# String, String, String, Datetime -> (Bool, Maybe Error)
 def update_article(slug, title, content, posted):
     try:
         g.db.execute('UPDATE posts SET title=?, content=? \
@@ -248,27 +248,30 @@ def get_post(post_id):
     except sqlite3.Error as e:
         return (False, "An error occurred: " + e.args[0])
 
-# (Int, Int) -> List
-def get_posts(limit=None, parent='default'):
-    if limit and parent is not 'default':
+# (Int, Int), Int, Either DESC ASC -> List
+def get_posts(limit=None, parent=False, order='DESC'):
+    if not order == 'DESC' and not order == 'ASC':
+        order = 'DESC'
+    if limit and parent is not False:
         req = g.db.execute('SELECT \
                             id, title, content, author, posted \
                             FROM posts WHERE parent IS ? \
-                            ORDER BY posted DESC LIMIT ?, ?',
+                            ORDER BY posted ' + order + ' LIMIT ?, ?',
                            [parent, limit[0], limit[1]])
-    elif parent is not 'default':
+    elif parent is not False:
         req = g.db.execute('SELECT \
                             id, title, content, author, posted \
                             FROM posts WHERE parent IS ? \
-                            ORDER BY posted DESC',
+                            ORDER BY posted ' + order,
                            [parent])
     elif limit:
         req = g.db.execute('SELECT \
                             id, title, content, author, posted \
-                            FROM posts ORDER BY posted DESC LIMIT ?, ?',
+                            FROM posts ORDER BY posted ' + order +
+                           ' LIMIT ?, ?',
                            [limit[0], limit[1]])
     else:
         req = g.db.execute('SELECT \
                             id, title, content, author, posted \
-                            FROM posts ORDER BY posted DESC')
+                            FROM posts ORDER BY posted ' + order)
     return req.fetchall()

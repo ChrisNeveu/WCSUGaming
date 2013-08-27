@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from 'tables.html' import pagination %}
 {% block body %}
 	<ul class=entries>
 	{% for article in articles %}
@@ -17,4 +18,5 @@
 		<article><em>Unbelievable.  No entries here so far</em></article>
 	{% endfor %}
 	</ul>
+	{{ pagination('display_news', pg) }}
 {% endblock %}

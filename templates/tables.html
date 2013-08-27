@@ -1,0 +1,8 @@
+{% macro pagination(func, page) -%}
+	<nav class=pagination>
+		{% if page > 1 %}
+			<a href="{{ url_for(func, page=(page - 1)) }}" class=prev_page>Previous Page</a>
+		{% endif %}
+		<a href="{{ url_for(func, page=(page + 1)) }}" class=next_page>Next Page</a>
+	</nav>	
+{%- endmacro %}

@@ -62,6 +62,15 @@ body
 	font-family: 'Arimo', sans-serif;
 }
 
+strong
+{
+	font-weight: bold;
+}
+em
+{
+	font-style: italic;
+}
+
 a
 {
 	color: $secColor;
@@ -156,6 +165,18 @@ form
 	textarea
 	{
 		display: block;
+	}
+}
+.pagination
+{
+	padding: 20px 0;
+	.next_page
+	{
+		float: right;
+	}
+	.prev_page
+	{
+		float: left;
 	}
 }
 

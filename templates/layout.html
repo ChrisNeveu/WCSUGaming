@@ -20,7 +20,6 @@
 
 <header class="banner">
 	<h1 class="logo"><a href="{{ url_for('display_news') }}">WCSU Gaming Club</a></h1>
-	{% if pages %}
 		<nav class="page_list">
 			<ul>
 				{% for page in pages %}
@@ -29,7 +28,6 @@
 				<li><a href="{{ url_for('display_threads') }}">Forum</a></li>
 			</ul>
 		<nav>
-	{% endif %}
 	{% if not session.logged_in %}
 		<div id=login_form class=pop_tab>
 			<a href="#">Login</a>

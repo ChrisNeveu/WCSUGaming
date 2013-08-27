@@ -1,6 +1,7 @@
 from WCSUGaming import app, render_template, request, session, database, \
                        g, redirect, url_for, abort, flash, config, user, \
                        creole
+import time
 
 @app.before_request
 def before_request():
@@ -12,21 +13,23 @@ def teardown_request(exception):
     if db is not None:
         db.close()
 
-@app.route('/')
-def display_news():
-    dbArticles = database.get_articles(limit=(0,20))
+@app.route('/', defaults={'page': 1})
+@app.route('/news/<int:page>')
+def display_news(page):
+    lim = (-config.PAGE + page * config.PAGE, page * config.PAGE)
+    result = database.get_articles(limit=lim)
     articles = [dict(title=row[0], slug=row[1],
-                     content=row[2], posted=row[3])
-                for row in dbArticles]
+                     content=row[2], posted=format_dt(row[3]))
+                for row in result]
     return render_user_page('display_news.html',
-                            articles=articles)
+                            articles=articles, pg=page)
     
 @app.route('/news/<slug>/')
 def display_article(slug):
     result = database.get_article(slug)
     if result[0]:
         article = dict(title=result[1][0], content=result[1][1],
-                       posted=result[1][2])
+                       posted=format_dt(result[1][2]))
         return render_user_page('display_article.html',
                                 article=article)
     else:
@@ -49,13 +52,17 @@ def admin_home():
     else:
         return redirect(url_for('display_news'))
 
-@app.route('/admin/news/')
-def display_admin_news():
+@app.route('/admin/news/', defaults={'page': 1})
+@app.route('/admin/news/<int:page>')
+def display_admin_news(page):
     if user.is_admin():
-        dbArticles = database.get_articles(limit=(0,20))
-        articles = [dict(title=row[0], slug=row[1], posted=row[3])
-                    for row in dbArticles]
-        return render_admin_page('admin_news.html', articles=articles)
+        lim = (-config.PAGE + page * config.PAGE, page * config.PAGE)
+        result = database.get_articles(limit=lim)
+        articles = [dict(title=row[0], slug=row[1],
+                         posted=format_dt(row[3]))
+                    for row in result]
+        return render_admin_page('admin_news.html',
+                                 articles=articles, pg=page)
     else:
         return redirect(url_for('display_news'))
 
@@ -104,13 +111,15 @@ def bulk_edit_articles():
             database.delete_article(slug)
     return redirect(url_for('display_admin_news'))
 
-@app.route('/admin/pages/')
-def display_admin_pages():
+@app.route('/admin/pages/', defaults={'page': 1})
+@app.route('/admin/pages/<int:page>')
+def display_admin_pages(page):
     if user.is_admin():
-        dbPages = database.get_pages(limit=(0,20))
+        lim = (-config.PAGE + page * config.PAGE, page * config.PAGE)
+        result = database.get_pages(limit=lim)
         pages = [dict(title=row[0], slug=row[1])
-                    for row in dbPages]
-        return render_admin_page('admin_pages.html', pages=pages)
+                    for row in result]
+        return render_admin_page('admin_pages.html', pages=pages, pg=page)
     else:
         return redirect(url_for('display_news'))
 
@@ -157,14 +166,17 @@ def bulk_edit_pages():
             database.delete_page(slug)
     return redirect(url_for('display_admin_pages'))
 
-@app.route('/admin/users/')
-def display_admin_users():
+
+@app.route('/admin/users/', defaults={'page': 1})
+@app.route('/admin/users/<int:page>')
+def display_admin_users(page):
     if user.is_admin():
-        req = database.get_users(limit=(0,20))
+        lim = (-config.PAGE + page * config.PAGE, page * config.PAGE)
+        result = database.get_users(limit=lim)
         users = [dict(name=row[0], email=row[1],
                       privilege=row[2], active=row[3])
-                    for row in req]
-        return render_admin_page('admin_users.html', users=users)
+                    for row in result]
+        return render_admin_page('admin_users.html', users=users, pg=page)
     else:
         return redirect(url_for('display_news'))
 
@@ -234,24 +246,26 @@ def register():
                 flash('Your account will be activated shortly.')
     return render_user_page('login.html', error=error)
 
-@app.route('/forum/')
-def display_threads():
+@app.route('/forum/', defaults={'page': 1})
+@app.route('/forum/<int:page>')
+def display_threads(page):
     if user.is_logged_in():
-        req = database.get_posts(limit=(0,20), parent=None)
+        lim = (-config.PAGE + page * config.PAGE, page * config.PAGE)
+        result = database.get_posts(limit=lim, parent=None)
         posts = [dict(id=row[0], title=row[1], content=row[2],
-                      author=row[3], posted=row[4])
-                    for row in req]
-        return render_user_page('forum.html', posts=posts)
+                      author=row[3], posted=format_dt(row[4]))
+                    for row in result]
+        return render_user_page('forum.html', posts=posts, pg=page)
     else:
         return redirect(url_for('display_news'))
 
-@app.route('/forum/<int:post_id>/')
+@app.route('/forum/post/<int:post_id>/')
 def display_post(post_id):
     result = database.get_post(post_id)
     if result[0]:
         post = dict(id=result[1][0], title=result[1][1],
                     content=result[1][2], author=result[1][3],
-                    posted=result[1][4], parent=result[1][5], 
+                    posted=format_dt(result[1][4]), parent=result[1][5], 
                     children=get_children(result[1][0],config.NESTING))
         return render_user_page('display_post.html',
                                 post=post)
@@ -304,7 +318,7 @@ def edit_post(post_id):
         result = database.get_post(post_id)
         post = dict(id=result[1][0], title=result[1][1],
                     content=result[1][2], author=result[1][3],
-                    posted=result[1][4])
+                    posted=format_dt(result[1][4]))
         if not result[0]:
             return render_user_page('edit_post.html', error=result[1])
         if (user.get_name() == post['author'] or user.is_admin()):
@@ -326,8 +340,8 @@ def edit_post(post_id):
                 
             
 def get_pages():
-    req = database.get_pages()
-    return [dict(title=row[0], slug=row[1])for row in req]
+    result = database.get_pages()
+    return [dict(title=row[0], slug=row[1])for row in result]
 
 def render_user_page(template, **kwargs):
     return render_template(template,
@@ -349,3 +363,7 @@ def get_children(post_id, levels):
                 for row in result]
     else:
         return None
+
+def format_dt(str):
+    return time.strftime('%B %d, %Y at %I:%M %p',
+                         time.strptime(str, '%Y-%m-%d %H:%M:%S'))
