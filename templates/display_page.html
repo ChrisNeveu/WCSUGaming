@@ -5,7 +5,7 @@
 			<h2>{{ page.title }}</h2>
 		</header>
 		<div class="page-content">
-			{{ page.content|safe }}
+			{{ page.content|creole2html|safe }}
 		</div>
 	</article>
 {% endblock %}

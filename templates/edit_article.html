@@ -6,7 +6,7 @@
 		<label>Title:</label>
 		<input type=text size=30 name=title id=title_field value="{{ article.title }}">
 		<label>Text:</label>
-		<textarea name=content rows=5 cols=40>{{ article.content }}</textarea>
+		<textarea name=content rows=5 cols=40 class=markItUp>{{ article.content }}</textarea>
 	{% else %}
 	<form action="{{ url_for('add_article') }}" method=post class=add-article>
 		<label>Title:</label>
@@ -14,7 +14,7 @@
 		<label>Slug:</label>
 		<input type=text size=30 name=slug id=slug_field>
 		<label>Text:</label>
-		<textarea name=content rows=5 cols=40></textarea>
+		<textarea name=content rows=5 cols=40 class=markItUp></textarea>
 	{% endif %}
 		<input type=submit value=Publish>
 	</form>

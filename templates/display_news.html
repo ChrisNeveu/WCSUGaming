@@ -7,7 +7,7 @@
 			<h2><a href="{{ url_for('display_article', slug=article.slug) }}">{{ article.title }}</a></h2>
 		</header>
 		<div class="article-content">
-			{{ article.content|safe }}
+			{{ article.content|creole2html|safe }}
 		</div>
 		<footer>
 			<aside>Posted on {{ article.posted }}</aside>

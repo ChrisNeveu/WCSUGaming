@@ -6,7 +6,7 @@
 			<p class="byline">Posted on {{ article.posted }}</p>
 		</header>
 		<div class="article-content">
-			{{ article.content|safe }}
+			{{ article.content|creole2html|safe }}
 		</div>
 	</article>
 {% endblock %}

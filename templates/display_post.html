@@ -11,7 +11,7 @@
 			</p>
 		</header>
 		<div class="post-content">
-			{{ post.content|safe }}
+			{{ post.content|creole2html|safe }}
 		</div>
 		<footer>
 			{% if session.name == post.author %}
@@ -29,7 +29,7 @@
 				</p>
 			</header>
 			<div class="post-content">
-				{{ child.content|safe }}
+				{{ child.content|creole2html|safe }}
 			</div>
 			<footer>
 				{% if session.name == child.author %}

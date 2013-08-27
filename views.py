@@ -1,5 +1,6 @@
 from WCSUGaming import app, render_template, request, session, database, \
-                       g, redirect, url_for, abort, flash, config, user
+                       g, redirect, url_for, abort, flash, config, user, \
+                       creole
 
 @app.before_request
 def before_request():
