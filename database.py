@@ -15,13 +15,14 @@ def connect_db():
 # String, String -> (Bool, Either List Error)
 def validate_user(username, password):
     try:
-        req = g.db.execute('SELECT password, email, privilege, active \
+        req = g.db.execute('SELECT password, email, privilege, \
+                            last_login, active \
                             FROM users WHERE username=?', [username])
         user = req.fetchone()
-        if not user[3]:
+        if not user[4]:
             return (False, "User not activated")
         if user and bcrypt.hashpw(password, user[0]) == user[0]:
-            return (True, user[1:3])
+            return (True, user[1:5])
         else:
             return (False, "Incorrect Password")
     except sqlite3.Error as e:
@@ -43,7 +44,8 @@ def register_user(username, password, email):
 def update_user(username, password, email, privilege, active):
     try:
         if password is None:
-            g.db.execute('UPDATE users SET email=?, privilege=?, active=? \
+            g.db.execute('UPDATE users \
+                          SET email=?, privilege=?, active=? \
                           WHERE username=?',
                          [email, privilege, active, username])
         else:
@@ -52,6 +54,16 @@ def update_user(username, password, email, privilege, active):
                           email=?, privilege=?, active=? \
                           WHERE username=?',
                          [hashed, email, privilege, active, username])
+        g.db.commit()
+        return (True, None)
+    except sqlite3.Error as e:
+        return (False, "An error occurred: " + e.args[0])
+
+# String -> (Bool, Maybe Error)
+def activate_user(username):
+    try:
+        g.db.execute('UPDATE users SET active=1 WHERE username=?',
+                     [username])
         g.db.commit()
         return (True, None)
     except sqlite3.Error as e:
@@ -90,6 +102,11 @@ def get_users(limit=None):
         req = g.db.execute('SELECT username, email, privilege, active \
                             FROM users ORDER BY username ASC')
     return req.fetchall()
+
+# Int
+def get_num_users():
+    result = g.db.execute('SELECT COUNT(*) FROM users')
+    return result.fetchone()[0]
 
 # String, String, String, Datetime -> (Bool, Maybe Error)
 def insert_article(slug, title, content, posted):
@@ -148,6 +165,11 @@ def get_articles(limit=None):
                             ORDER BY posted DESC')
     return req.fetchall()
 
+# Int
+def get_num_articles():
+    result = g.db.execute('SELECT COUNT(*) FROM posts WHERE featured=1')
+    return result.fetchone()[0]
+
 # String, String, String -> (Bool, Maybe Error)
 def insert_page(slug, title, content):
     try:
@@ -202,23 +224,28 @@ def get_pages(limit=None):
                             ORDER BY title ASC')
     return req.fetchall()
 
-# String, String, String, Datetime, Int -> (Bool, Maybe Error)
-def insert_post(title, content, author, posted, parent):
+# Int
+def get_num_pages():
+    result = g.db.execute('SELECT COUNT(*) FROM pages')
+    return result.fetchone()[0]
+
+# String, String, String, Datetime, Int, Bool -> (Bool, Maybe Error)
+def insert_post(title, content, author, posted, parent, pinned):
     try:
         g.db.execute('INSERT INTO posts \
-                      (title, content, author, parent) \
-                      VALUES (?, ?, ?, ?)',
-                     [title, content, author, parent])
+                      (title, content, author, parent, pinned) \
+                      VALUES (?, ?, ?, ?, ?)',
+                     [title, content, author, parent, pinned])
         g.db.commit()
         return (True, None)
     except sqlite3.Error as e:
         return (False, "An error occurred: " + e.args[0])
 
-# Int, String, String -> (Bool, Maybe Error)
-def update_post(post_id, title, content):
+# Int, String, String, Bool -> (Bool, Maybe Error)
+def update_post(post_id, title, content, pinned):
     try:
-        g.db.execute('UPDATE posts SET title=?, content=? \
-                      WHERE id=?', [title, content, post_id])
+        g.db.execute('UPDATE posts SET title=?, content=?, pinned=? \
+                      WHERE id=?', [title, content, pinned, post_id])
         g.db.commit()
         return (True, None)
     except sqlite3.Error as e:
@@ -238,7 +265,8 @@ def delete_post(post_id):
 def get_post(post_id):
     try:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted, parent \
+                            id, title, content, author, \
+                            posted, parent, pinned \
                             FROM posts WHERE id=?', [post_id])
         post =req.fetchone()
         if post:
@@ -254,24 +282,25 @@ def get_posts(limit=None, parent=False, order='DESC'):
         order = 'DESC'
     if limit and parent is not False:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted \
+                            id, title, content, author, posted, pinned \
                             FROM posts WHERE parent IS ? \
-                            ORDER BY posted ' + order + ' LIMIT ?, ?',
+                            ORDER BY pinned DESC, posted ' + order + 
+                           ' LIMIT ?, ?',
                            [parent, limit[0], limit[1]])
     elif parent is not False:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted \
+                            id, title, content, author, posted, pinned \
                             FROM posts WHERE parent IS ? \
-                            ORDER BY posted ' + order,
+                            ORDER BY pinned DESC, posted ' + order,
                            [parent])
     elif limit:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted \
-                            FROM posts ORDER BY posted ' + order +
-                           ' LIMIT ?, ?',
+                            id, title, content, author, posted, pinned \
+                            FROM posts ORDER BY pinned DESC, posted ' +
+                           order + ' LIMIT ?, ?',
                            [limit[0], limit[1]])
     else:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted \
-                            FROM posts ORDER BY posted ' + order)
+                            id, title, content, author, posted, pinned \
+                            FROM posts ORDER BY pinned DESC, posted ' + order)
     return req.fetchall()

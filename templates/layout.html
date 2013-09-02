@@ -6,6 +6,7 @@
 
 <script type="text/javascript" src="{{ url_for('static', filename='js/poptab.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/autoslug.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/timezone.js') }}"></script>
 
 <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-2.0.3.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/markitup/jquery.markitup.js') }}"></script>
@@ -42,8 +43,10 @@
 		<div id=register_form class=pop_tab>
 			<a href="#">Register</a>
 			<form action="{{ url_for('register') }}" method=post>
-				<label>Username:</label>
-				<input type=text name=username>
+				<label>First Name:</label>
+				<input type=text name=first>
+				<label>Last Name:</label>
+				<input type=text name=last>
 				<label>Password:</label>
 				<input type=password name=password>
 				<label>Password Again:</label>
@@ -71,3 +74,6 @@
 <div class=page>
 	{% block body %}{% endblock %}
 </div>
+<footer>
+	<a id="help_link"href="{{ url_for('web_help') }}">!</a>
+</footer>

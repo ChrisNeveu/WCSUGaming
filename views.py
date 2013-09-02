@@ -22,7 +22,9 @@ def display_news(page):
                      content=row[2], posted=format_dt(row[3]))
                 for row in result]
     return render_user_page('display_news.html',
-                            articles=articles, pg=page)
+                            articles=articles,
+                            pg=page,
+                            num_articles=database.get_num_articles())
     
 @app.route('/news/<slug>/')
 def display_article(slug):
@@ -62,7 +64,9 @@ def display_admin_news(page):
                          posted=format_dt(row[3]))
                     for row in result]
         return render_admin_page('admin_news.html',
-                                 articles=articles, pg=page)
+                                 articles=articles,
+                                 pg=page,
+                                 num_articles=database.get_num_articles())
     else:
         return redirect(url_for('display_news'))
 
@@ -119,7 +123,10 @@ def display_admin_pages(page):
         result = database.get_pages(limit=lim)
         pages = [dict(title=row[0], slug=row[1])
                     for row in result]
-        return render_admin_page('admin_pages.html', pages=pages, pg=page)
+        return render_admin_page('admin_pages.html',
+                                 a_pages=pages,
+                                 pg=page,
+                                 num_pages=database.get_num_pages())
     else:
         return redirect(url_for('display_news'))
 
@@ -162,8 +169,9 @@ def edit_page(slug):
 @app.route('/admin/pages/bulk-edit', methods=['POST'])
 def bulk_edit_pages():
     if request.method == 'POST' and user.is_admin():
-        for slug in request.form.getlist('slugs'):
-            database.delete_page(slug)
+        if request.form.get('action', '') == 'delete':
+            for slug in request.form.getlist('slugs'):
+                database.delete_page(slug)
     return redirect(url_for('display_admin_pages'))
 
 
@@ -176,7 +184,10 @@ def display_admin_users(page):
         users = [dict(name=row[0], email=row[1],
                       privilege=row[2], active=row[3])
                     for row in result]
-        return render_admin_page('admin_users.html', users=users, pg=page)
+        return render_admin_page('admin_users.html',
+                                 users=users,
+                                 pg=page,
+                                 num_users=database.get_num_users())
     else:
         return redirect(url_for('display_news'))
 
@@ -207,8 +218,12 @@ def edit_user(name):
 @app.route('/admin/users/bulk-edit', methods=['POST'])
 def bulk_edit_users():
     if request.method == 'POST' and user.is_admin():
-        for name in request.form.getlist('names'):
-            database.delete_user(name)
+        if request.form.get('action', '') == 'delete':
+            for name in request.form.getlist('names'):
+                database.delete_user(name)
+        elif request.form.get('action', '') == 'activate':
+            for name in request.form.getlist('names'):
+                database.activate_user(name)
     return redirect(url_for('display_admin_users'))
 
 @app.route('/login',methods=['GET', 'POST'])
@@ -219,7 +234,7 @@ def login():
                                         request.form['password'])
         if result[0]:
             user.log_in(request.form['username'],
-                        result[1][0], result[1][1])
+                        result[1][0], result[1][1], result[1][2])
             flash('You have been logged in')
             return redirect(url_for('display_news'))
         else:
@@ -239,7 +254,8 @@ def register():
         if request.form['password'] != request.form['password2']:
             error = "Passwords not the same"
         else:
-            error = (database.register_user(request.form['username'],
+            username = request.form['first'] + ' ' + request.form['last']
+            error = (database.register_user(username,
                                             request.form['password'],
                                             request.form['email']))[1]
             if error is None:
@@ -253,7 +269,8 @@ def display_threads(page):
         lim = (-config.PAGE + page * config.PAGE, page * config.PAGE)
         result = database.get_posts(limit=lim, parent=None)
         posts = [dict(id=row[0], title=row[1], content=row[2],
-                      author=row[3], posted=format_dt(row[4]))
+                      author=row[3], posted=format_dt(row[4]),
+                      pinned=row[5])
                     for row in result]
         return render_user_page('forum.html', posts=posts, pg=page)
     else:
@@ -277,11 +294,16 @@ def add_post():
     error = None
     if user.is_logged_in():
         if request.method == 'POST':
+            if user.is_admin():
+                 pinned = request.form.get('pinned', 0)
+            else:
+                 pinned = 0
             result = database.insert_post(request.form['title'],
                                           request.form['content'],
                                           request.form['author'],
                                           0,
-                                          None)
+                                          None,
+                                          pinned)
             if result[0]:
                 flash('Post created.')
                 return redirect(url_for('display_threads'))
@@ -300,7 +322,8 @@ def add_reply(parent_id):
                                           request.form['content'],
                                           request.form['author'],
                                           0,
-                                          parent_id)
+                                          parent_id,
+                                          0)
             if result[0]:
                 flash('Post created.')
                 return redirect(url_for('display_post', post_id=parent_id))
@@ -318,18 +341,23 @@ def edit_post(post_id):
         result = database.get_post(post_id)
         post = dict(id=result[1][0], title=result[1][1],
                     content=result[1][2], author=result[1][3],
-                    posted=format_dt(result[1][4]))
+                    posted=format_dt(result[1][4]), pinned=result[1][6])
         if not result[0]:
             return render_user_page('edit_post.html', error=result[1])
         if (user.get_name() == post['author'] or user.is_admin()):
             if request.method == 'POST':
+                if user.is_admin():
+                    pinned = request.form.get('pinned', 0)
+                else:
+                    pinned = 0
                 result = database.update_post(post_id,
                                               request.form['title'],
-                                              request.form['content'])
+                                              request.form['content'],
+                                              pinned)
                 if result[0]:
                     flash('Post Updated.')
-                    return redirect(url_for(display_post('display_post',
-                                                         post_id=post_id)))
+                    return redirect(url_for('display_post',
+                                            post_id=post_id))
                 else:
                     return render_user_page('edit_post.html',
                                             error=result[1])
@@ -337,6 +365,10 @@ def edit_post(post_id):
                 return render_user_page('edit_post.html', post=post)
     else:
         return redirect(url_for('display_news'))
+
+@app.route('/website-problems/')
+def web_help():
+    return render_user_page('website_help.html')
                 
             
 def get_pages():
@@ -351,6 +383,7 @@ def render_user_page(template, **kwargs):
 
 def render_admin_page(template, **kwargs):
     return render_template(template,
+                           pages=get_pages(),
                            ADMIN_LEVEL=config.ADMIN_LEVEL,
                            **kwargs)
 
@@ -364,6 +397,6 @@ def get_children(post_id, levels):
     else:
         return None
 
-def format_dt(str):
-    return time.strftime('%B %d, %Y at %I:%M %p',
-                         time.strptime(str, '%Y-%m-%d %H:%M:%S'))
+def format_dt(sec):
+    offset = int(request.cookies.get('tz_off', 0)) * 60
+    return time.strftime('%B %d, %Y at %I:%M %p', time.gmtime(sec - offset))

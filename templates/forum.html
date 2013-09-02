@@ -4,7 +4,7 @@
 	<a href="{{ url_for('add_post') }}" class=button>New Thread</a>
 	<ul class=posts>
 	{% for post in posts %}
-		<article>
+		<article {% if post.pinned %}class=pinned{% endif %}>
 		<header>
 			<h2><a href="{{ url_for('display_post', post_id=post.id) }}">{{ post.title }}</a></h2>
 		</header>

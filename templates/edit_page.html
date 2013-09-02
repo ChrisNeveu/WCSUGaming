@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block body %}
-	{% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
 	{% if page %}
 	<form action="{{ url_for('edit_page', slug=page.slug) }}" method=post class=update-page>
 		<label>Title:</label>

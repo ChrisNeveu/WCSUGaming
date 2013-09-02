@@ -22,7 +22,13 @@
 				{% endfor %}
 			</tbody>
 		</table>
-		<input type=submit value="Delete Selected Pages" class=button>
+		<label class=select_label>
+			<select name=action>
+				<option>Select Action</option>
+				<option value=delete>Delete</option>
+			</select>
+		</label>
+		<input type=submit value="Apply" class=button>
 	</form>
-	{{ pagination('display_admin_news', pg) }}
+	{{ pagination('display_admin_news', pg, num_articles) }}
 {% endblock %}

@@ -1,11 +1,13 @@
 from WCSUGaming import app, g, render_template, request, session, \
                        redirect, url_for, abort, flash, config
+import time
 
-def log_in(name, email, privilege):
+def log_in(name, email, privilege, last_login):
     session['logged_in'] = True
     session['name'] = name
     session['email'] = email
     session['privilege'] = privilege
+    session['last_login'] = last_login
 
 def log_out():
     session.pop('logged_in', None)

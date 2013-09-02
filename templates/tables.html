@@ -1,8 +1,15 @@
-{% macro pagination(func, page) -%}
+{% macro pagination(func, page, num_items) -%}
 	<nav class=pagination>
 		{% if page > 1 %}
 			<a href="{{ url_for(func, page=(page - 1)) }}" class=prev_page>Previous Page</a>
 		{% endif %}
-		<a href="{{ url_for(func, page=(page + 1)) }}" class=next_page>Next Page</a>
+		{{ ((page - 1) * config.PAGE + 1) if num_items != 0 else 0 }}&ndash;{{ num_items if num_items < (page * config.PAGE) else page * config.PAGE }} out of {{ num_items }}
+		{% if page * config.PAGE < num_items %}
+			<a href="{{ url_for(func, page=(page + 1)) }}" class=next_page>Next Page</a>
+		{% endif %}
 	</nav>	
+{%- endmacro %}
+
+{% macro no_entries() -%}
+	<em>There is nothing here.</em>
 {%- endmacro %}

@@ -22,7 +22,14 @@
 				{% endfor %}
 			</tbody>
 		</table>
-		<input type=submit value="Delete Selected Users">
+		<label class=select_label>
+			<select name=action>
+				<option>Select Action</option>
+			<option value=activate>Activate</option>
+				<option value=delete>Delete</option>
+			</select>
+		</label>
+		<input type=submit value="Apply">
 	</form>
-	{{ pagination('display_admin_users', pg) }}
+	{{ pagination('display_admin_users', pg, num_users) }}
 {% endblock %}

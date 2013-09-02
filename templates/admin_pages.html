@@ -10,7 +10,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{% for page in pages %}
+				{% for page in a_pages %}
 					<tr>
 						<td class="mini_column"><input type="checkbox" value="{{ page.slug }}" name="slugs"></td>
 						<td><a href="{{ url_for('edit_page', slug=page.slug) }}">{{page.title}}</a></td>
@@ -21,7 +21,13 @@
 				{% endfor %}
 			</tbody>
 		</table>
-		<input type=submit value="Delete Selected Pages" class=button>
+		<label class=select_label>
+			<select name=action>
+				<option>Select Action</option>
+				<option value=delete>Delete</option>
+			</select>
+		</label>
+		<input type=submit value="Apply" class=button>
 	</form>
-	{{ pagination('display_admin_pages', pg) }}
+	{{ pagination('display_admin_pages', pg, num_pages) }}
 {% endblock %}
