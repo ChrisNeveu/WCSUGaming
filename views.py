@@ -272,7 +272,10 @@ def display_threads(page):
                       author=row[3], posted=format_dt(row[4]),
                       pinned=row[5])
                     for row in result]
-        return render_user_page('forum.html', posts=posts, pg=page)
+        return render_user_page('forum.html',
+                                posts=posts,
+                                pg=page,
+                                num_threads=database.get_num_posts())
     else:
         return redirect(url_for('display_news'))
 

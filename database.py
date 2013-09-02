@@ -276,7 +276,7 @@ def get_post(post_id):
     except sqlite3.Error as e:
         return (False, "An error occurred: " + e.args[0])
 
-# (Int, Int), Int, Either DESC ASC -> List
+# (Int, Int), Maybe Int, Either DESC ASC -> List
 def get_posts(limit=None, parent=False, order='DESC'):
     if not order == 'DESC' and not order == 'ASC':
         order = 'DESC'
@@ -304,3 +304,9 @@ def get_posts(limit=None, parent=False, order='DESC'):
                             id, title, content, author, posted, pinned \
                             FROM posts ORDER BY pinned DESC, posted ' + order)
     return req.fetchall()
+
+# Maybe Int -> Int
+def get_num_posts(parent=None):
+    result = g.db.execute('SELECT COUNT(*) FROM posts WHERE parent IS ?',
+                          [parent])
+    return result.fetchone()[0]
