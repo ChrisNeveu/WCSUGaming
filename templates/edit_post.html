@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 {% block body %}
 	{% if post %}
-	<form action="{{ url_for('edit_post', post_id=post.id) }}" method=post class=delete_post>
+	<form action="{{ url_for('edit_post', post_id=post.id, redirect=request.args.redirect) }}" method=post class=delete_post>
 		<input type=hidden name=title value="[deleted]">
 		<input type=hidden name=locked value=1>
 		<input type=hidden name=content value="[deleted]">
 		<input type=submit value="Delete Post">
 	</form>
-	<form action="{{ url_for('edit_post', post_id=post.id) }}" method=post class=update_post>
+	<form action="{{ url_for('edit_post', post_id=post.id, redirect=request.args.redirect) }}" method=post class=update_post>
 		<label>Title:</label>
 		<input type=text size=30 name=title id=title_field value="{{ post.title }}">
 		{% if session.privilege == config.ADMIN_LEVEL %}
@@ -19,7 +19,7 @@
 		<label>Text:</label>
 		<textarea name=content rows=5 cols=40 class=markItUp>{{ post.content }}</textarea>
 	{% elif parent %}
-	<form action="{{ url_for('add_reply', parent_id=parent) }}" method=post class=add_post>
+	<form action="{{ url_for('add_reply', parent_id=parent, redirect=request.args.redirect) }}" method=post class=add_post>
 		<label>Title:</label>
 		<input type=text size=30 name=title id=title_field>
 		<label>Text:</label>

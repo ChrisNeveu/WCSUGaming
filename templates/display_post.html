@@ -15,7 +15,7 @@
 		</div>
 		<footer>
 			{% if (session.name == post.author and post.locked == 0) or session.privilege == config.ADMIN_LEVEL  %}
-				<a href="{{ url_for('edit_post', post_id=post.id) }}" class=button>Edit Post</a>
+				<a href="{{ url_for('edit_post', post_id=post.id, redirect=post.id) }}" class=button>Edit Post</a>
 			{% endif %}
 			<a href="{{ url_for('add_reply', parent_id=post.id) }}" class=button>Reply to Post</a>
 		</footer>
@@ -33,10 +33,10 @@
 			</div>
 			<footer>
 				{% if (session.name == child.author and child.locked == 0) or session.privilege == config.ADMIN_LEVEL %}
-					<a href="{{ url_for('edit_post', post_id=child.id) }}">Edit Post</a>
+					<a href="{{ url_for('edit_post', post_id=child.id, redirect=post.id) }}">Edit Post</a>
 				{% endif %}
 				{% if config.NESTING > loop.depth %}
-					<a href="{{ url_for('add_reply', parent_id=child.id) }}">Reply to Post</a>
+					<a href="{{ url_for('add_reply', parent_id=child.id, redirect=post.id) }}">Reply to Post</a>
 				{% endif %}
 			</footer>
 		{% if child.children %}

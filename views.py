@@ -330,7 +330,9 @@ def add_reply(parent_id):
                                           0)
             if result[0]:
                 flash('Post created.')
-                return redirect(url_for('display_post', post_id=parent_id))
+                redir = request.args.get('redirect', parent_id)
+                return redirect(url_for('display_post',
+                                        post_id=redir))
             else:
                 error = result[1]
         return render_user_page('edit_post.html',
@@ -366,8 +368,9 @@ def edit_post(post_id):
                                               pinned)
                 if result[0]:
                     flash('Post Updated.')
+                    redir = request.args.get('redirect', post_id)
                     return redirect(url_for('display_post',
-                                            post_id=post_id))
+                                            post_id=redir))
                 else:
                     return render_user_page('edit_post.html',
                                             error=result[1])
