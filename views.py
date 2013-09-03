@@ -285,7 +285,8 @@ def display_post(post_id):
     if result[0]:
         post = dict(id=result[1][0], title=result[1][1],
                     content=result[1][2], author=result[1][3],
-                    posted=format_dt(result[1][4]), parent=result[1][5], 
+                    posted=format_dt(result[1][4]), parent=result[1][5],
+                    locked=result[1][6],
                     children=get_children(result[1][0],config.NESTING))
         return render_user_page('display_post.html',
                                 post=post)
@@ -342,20 +343,26 @@ def add_reply(parent_id):
 def edit_post(post_id):
     if user.is_logged_in():
         result = database.get_post(post_id)
-        post = dict(id=result[1][0], title=result[1][1],
-                    content=result[1][2], author=result[1][3],
-                    posted=format_dt(result[1][4]), pinned=result[1][6])
         if not result[0]:
             return render_user_page('edit_post.html', error=result[1])
+        post = dict(id=result[1][0], title=result[1][1],
+                    content=result[1][2], author=result[1][3],
+                    posted=format_dt(result[1][4]), locked=result[1][6],
+                    pinned=result[1][7])
+        if post['locked'] and not user.is_admin():
+            return redirect(url_for('display_news'))
         if (user.get_name() == post['author'] or user.is_admin()):
             if request.method == 'POST':
                 if user.is_admin():
+                    locked = request.form.get('locked', 0)
                     pinned = request.form.get('pinned', 0)
                 else:
+                    locked = 0
                     pinned = 0
                 result = database.update_post(post_id,
                                               request.form['title'],
                                               request.form['content'],
+                                              locked,
                                               pinned)
                 if result[0]:
                     flash('Post Updated.')
@@ -368,6 +375,11 @@ def edit_post(post_id):
                 return render_user_page('edit_post.html', post=post)
     else:
         return redirect(url_for('display_news'))
+
+
+@app.route('/forum/split/<int:post_id>', methods=['POST'])
+def remove_post_parent(post_id):
+    '''Set the post's parent to null, thereby turning it into a thread.'''
 
 @app.route('/website-problems/')
 def web_help():
@@ -394,7 +406,8 @@ def get_children(post_id, levels):
     if levels > 0:
     	result = database.get_posts(parent=post_id)
         return [dict(id=row[0], title=row[1], content=row[2],
-                     author=row[3], posted=row[4],
+                     author=row[3], posted=format_dt(row[4]),
+                     locked=row[5],
                      children=get_children(row[0], (levels - 1)))
                 for row in result]
     else:

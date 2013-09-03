@@ -8,8 +8,8 @@
 		<input type=text size=30 name=email value="{{ user.email }}">
 		<label>Role:</label>
 		<select name=privilege>
-			<option value=0 {% if user.privilege is sameas 0 %}selected=selected{% endif %}>User</option>
-			<option value=4 {% if user.privilege is sameas 4 %}selected=selected{% endif %}>Admin</option>
+			<option value=0 {% if user.privilege == 0 %}selected=selected{% endif %}>User</option>
+			<option value=4 {% if user.privilege == config.ADMIN_LEVEL %}selected=selected{% endif %}>Admin</option>
 		</select>
 		<label>Active:</label>
 		<select name=active>

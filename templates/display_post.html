@@ -14,7 +14,7 @@
 			{{ post.content|creole2html|safe }}
 		</div>
 		<footer>
-			{% if session.name == post.author %}
+			{% if (session.name == post.author and post.locked == 0) or session.privilege == config.ADMIN_LEVEL  %}
 				<a href="{{ url_for('edit_post', post_id=post.id) }}" class=button>Edit Post</a>
 			{% endif %}
 			<a href="{{ url_for('add_reply', parent_id=post.id) }}" class=button>Reply to Post</a>
@@ -32,10 +32,12 @@
 				{{ child.content|creole2html|safe }}
 			</div>
 			<footer>
-				{% if session.name == child.author %}
+				{% if (session.name == child.author and child.locked == 0) or session.privilege == config.ADMIN_LEVEL %}
 					<a href="{{ url_for('edit_post', post_id=child.id) }}">Edit Post</a>
 				{% endif %}
-				<a href="{{ url_for('add_reply', parent_id=child.id) }}">Reply to Post</a>
+				{% if config.NESTING > loop.depth %}
+					<a href="{{ url_for('add_reply', parent_id=child.id) }}">Reply to Post</a>
+				{% endif %}
 			</footer>
 		{% if child.children %}
 			{{ loop(child.children) }}

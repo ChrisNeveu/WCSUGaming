@@ -242,10 +242,11 @@ def insert_post(title, content, author, posted, parent, pinned):
         return (False, "An error occurred: " + e.args[0])
 
 # Int, String, String, Bool -> (Bool, Maybe Error)
-def update_post(post_id, title, content, pinned):
+def update_post(post_id, title, content, lock, pinned):
     try:
-        g.db.execute('UPDATE posts SET title=?, content=?, pinned=? \
-                      WHERE id=?', [title, content, pinned, post_id])
+        g.db.execute('UPDATE posts SET title=?, \
+                      content=?, locked=?, pinned=? \
+                      WHERE id=?', [title, content, lock, pinned, post_id])
         g.db.commit()
         return (True, None)
     except sqlite3.Error as e:
@@ -266,7 +267,7 @@ def get_post(post_id):
     try:
         req = g.db.execute('SELECT \
                             id, title, content, author, \
-                            posted, parent, pinned \
+                            posted, parent, locked, pinned \
                             FROM posts WHERE id=?', [post_id])
         post =req.fetchone()
         if post:
@@ -282,26 +283,30 @@ def get_posts(limit=None, parent=False, order='DESC'):
         order = 'DESC'
     if limit and parent is not False:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted, pinned \
+                            id, title, content, author, \
+                            posted, locked, pinned \
                             FROM posts WHERE parent IS ? \
                             ORDER BY pinned DESC, posted ' + order + 
                            ' LIMIT ?, ?',
                            [parent, limit[0], limit[1]])
     elif parent is not False:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted, pinned \
+                            id, title, content, author, \
+                            posted, locked, pinned \
                             FROM posts WHERE parent IS ? \
                             ORDER BY pinned DESC, posted ' + order,
                            [parent])
     elif limit:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted, pinned \
+                            id, title, content, author, \
+                            posted, locked, pinned \
                             FROM posts ORDER BY pinned DESC, posted ' +
                            order + ' LIMIT ?, ?',
                            [limit[0], limit[1]])
     else:
         req = g.db.execute('SELECT \
-                            id, title, content, author, posted, pinned \
+                            id, title, content, author, \
+                            posted, locked, pinned \
                             FROM posts ORDER BY pinned DESC, posted ' + order)
     return req.fetchall()
 
