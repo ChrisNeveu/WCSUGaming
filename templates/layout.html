@@ -26,7 +26,9 @@
 				{% for page in pages %}
 					<li><a href="/{{ page.slug }}">{{ page.title }}</a></li>
 				{% endfor %}
-				<li><a href="{{ url_for('display_threads') }}">Forum</a></li>
+				{% if session.logged_in %}
+					<li><a href="{{ url_for('display_threads') }}">Forum</a></li>
+				{% endif %}
 			</ul>
 		<nav>
 	{% if not session.logged_in %}
