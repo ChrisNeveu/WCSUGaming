@@ -17,9 +17,9 @@
 			<option value=0 {% if not user.active %}selected=selected{% endif %}>Inactive</option>
 		</select>
 		<label>New Password:</label>
-		<input type=text size=30 name=password>
+		<input type=password size=30 name=password>
 		<label>New Password Again:</label>
-		<input type=text size=30 name=password2>
+		<input type=password size=30 name=password2>
 	{% else %}
 	<form action="{{ url_for('add_article') }}" method=post class=add-article>
 		<label>Title:</label>

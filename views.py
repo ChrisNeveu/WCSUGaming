@@ -194,16 +194,20 @@ def display_admin_users(page):
 @app.route('/admin/users/edit/<name>', methods=['GET', 'POST'])
 def edit_user(name):
     if request.method == 'POST' and user.is_admin():
-        result = database.update_user(name,
-                                      None,
-                                      request.form['email'],
-                                      request.form['privilege'],
-                                      request.form['active'])
-        if result[0]:
-            flash('User updated.')
-            return redirect(url_for('display_admin_users'))
-        else:
-            return render_admin_page('edit_user.html', error=result[1])
+        password = request.form.get('password', None)
+        error = 'Passwords not the same.'
+        if password == request.form.get('password2', None):
+            result = database.update_user(name,
+                                          password,
+                                          request.form['email'],
+                                          request.form['privilege'],
+                                          request.form['active'])
+            if result[0]:
+                flash('User updated.')
+                return redirect(url_for('display_admin_users'))
+            else:
+                error=result[1]
+        return render_admin_page('edit_user.html', error=error)
     elif user.is_admin():
         result = database.get_user(name)
         if result[0]:
