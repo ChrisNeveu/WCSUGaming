@@ -1,11 +1,12 @@
 from WCSUGaming import app, render_template, request, session, database, \
                        g, redirect, url_for, abort, flash, config, user, \
                        creole
-import time
+from datetime import timedelta
 
 @app.before_request
 def before_request():
     g.db = database.connect_db()
+    g.db.get_conn().set_client_encoding('UTF8')
 
 @app.teardown_request
 def teardown_request(exception):
@@ -420,6 +421,6 @@ def get_children(post_id, levels):
     else:
         return None
 
-def format_dt(sec):
+def format_dt(time):
     offset = int(request.cookies.get('tz_off', 0)) * 60
-    return time.strftime('%B %d, %Y at %I:%M %p', time.gmtime(sec - offset))
+    return (time - timedelta(0, offset)).strftime('%B %d, %Y at %I:%M %p')

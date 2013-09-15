@@ -1,317 +1,328 @@
 import bcrypt
 import sqlite3
+import peewee as pw
 from WCSUGaming import app, g
 from contextlib import closing
+from datetime import datetime
 
 def init_db():
-    with closing(connect_db()) as db:
-        with app.open_resource('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
+    User.create_table()
+    Page.create_table()
+    Post.create_table()
+    admin = User.create(
+        name='admin',
+        password=bcrypt.hashpw('password', bcrypt.gensalt()),
+        email='mail@test.com',
+        privilege=4,
+        active=True
+    )
 
 def connect_db():
-    return sqlite3.connect(app.config['DATABASE'])
+    return pw.PostgresqlDatabase(app.config['DB_NAME'],
+                                 host=app.config['DB_HOST'],
+                                 user=app.config['DB_USER'],
+                                 password=app.config['DB_PASS'])
 
-# String, String -> (Bool, Either List Error)
-def validate_user(username, password):
-    try:
-        req = g.db.execute('SELECT password, email, privilege, \
-                            last_login, active \
-                            FROM users WHERE username=?', [username])
-        user = req.fetchone()
-        if not user[4]:
+db = connect_db()
+
+class BaseModel(pw.Model):
+    class Meta:
+        database = db
+
+class User(BaseModel):
+    name = pw.CharField(primary_key=True)
+    password = pw.CharField()
+    email = pw.CharField()
+    privilege = pw.IntegerField(default=0)
+    last_login = pw.DateTimeField(default=datetime.utcnow())
+    active = pw.BooleanField(default=False)
+
+    class Meta:
+        order_by = ('name',)
+
+    def validate(self, passw):
+        if not self.active:
             return (False, "User not activated")
-        if user and bcrypt.hashpw(password, user[0]) == user[0]:
-            return (True, user[1:5])
+        if bcrypt.hashpw(passw, self.password) == self.password:
+            return (True, None)
         else:
             return (False, "Incorrect Password")
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
 
-# String, String, String -> (Bool, Maybe Error)
-def register_user(username, password, email):
-    hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+class Page(BaseModel):
+    slug = pw.CharField(primary_key=True)
+    title = pw.CharField()
+    content = pw.TextField()
+
+    class Meta:
+        order_by = ('title',)
+
+class Post(BaseModel):
+    post_id = pw.PrimaryKeyField()
+    title = pw.CharField(null=True)
+    slug = pw.CharField(null=True)
+    content = pw.TextField()
+    author = pw.ForeignKeyField(User, related_name='posts')
+    posted = pw.DateTimeField(default=datetime.utcnow())
+    parent = pw.ForeignKeyField('self', related_name='children', null=True)
+    locked = pw.BooleanField(default=False)
+    pinned = pw.BooleanField(default=False)
+    featured = pw.BooleanField(default=False)
+
+    class Meta:
+        order_by = ('-posted',)
+
+def validate_user(username, password):
     try:
-        g.db.execute('INSERT INTO users \
-                      (username, password, email, privilege) \
-                      VALUES (?, ?, ?, ?)', [username, hashed, email, 0])
-        g.db.commit()
-        return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+        user = User.get(User.name == username)
+        if not user.active:
+            return (False, "User not activated")
+        if user.validate(password):
+            return (True, [user.email, user.privilege,
+                           user.last_login, user.active])
+        else:
+            return (False, "Incorrect Password")
+    except User.DoesNotExist:
+        return (False, "User not found.")
 
-# String, String, String, Int -> (Bool, Maybe Error)
+def register_user(username, password, email):
+    try:
+        user = User.get(User.name == username)
+        return (False, 'Username is taken')
+    except User.DoesNotExist:
+        user = User.create(
+            name=username,
+            password=bcrypt.hashpw(password, bcrypt.gensalt()),
+            email=email
+        )
+        return (True, None)
+
 def update_user(username, password, email, privilege, active):
     try:
-        if password is None:
-            g.db.execute('UPDATE users \
-                          SET email=?, privilege=?, active=? \
-                          WHERE username=?',
-                         [email, privilege, active, username])
-        else:
-            hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-            g.db.execute('UPDATE users SET password=?, \
-                          email=?, privilege=?, active=? \
-                          WHERE username=?',
-                         [hashed, email, privilege, active, username])
-        g.db.commit()
+        user = User.get(User.name == username)
+        user.email = email
+        user.privilege = privilege
+        user.active = active
+        if password is not None:
+            user.password = bcrypt.hashpw(password, bcrypt.gensalt())
+        user.save()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except User.DoesNotExist:
+        return (False, "User not found.")
 
-# String -> (Bool, Maybe Error)
 def activate_user(username):
     try:
-        g.db.execute('UPDATE users SET active=1 WHERE username=?',
-                     [username])
-        g.db.commit()
+        user = User.get(User.name == username)
+        user.active = True
+        user.save()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except User.DoesNotExist:
+        return (False, "User not found.")
 
-# String -> (Bool, Maybe Error)
 def delete_user(username):
     try:
-        g.db.execute('DELETE FROM users WHERE username=?',
-                     [username])
-        g.db.commit()
+        user = User.get(User.name == username)
+        user.delete_instance()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except User.DoesNotExist:
+        return (False, "User not found.")
 
-# String -> (Bool, Either Int Error)
 def get_user(username):
     try:
-        req = g.db.execute('SELECT username, email, privilege, active \
-                            FROM users WHERE username=?', [username])
-        user = req.fetchone()
-        if user:
-            return (True, user)
-        else:
-            return (False, "No user with that name")
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+        user = User.select().where(User.name == username).get()
+        return (True, [user.name, user.email,
+                       user.privilege, user.active])
+    except User.DoesNotExist:
+        return (False, "User not found")
 
-# (Int, Int) -> List
 def get_users(limit=None):
+    users = []
     if limit:
-        req = g.db.execute('SELECT username, email, privilege, active \
-                            FROM users ORDER BY username ASC LIMIT ?, ?',
-                           [limit[0], limit[1]])
+        for user in User.select().offset(limit[0]).limit(limit[1]-limit[0]):
+            users.append([user.name, user.email,
+                          user.privilege, user.active])
     else:
-        req = g.db.execute('SELECT username, email, privilege, active \
-                            FROM users ORDER BY username ASC')
-    return req.fetchall()
+        for user in User.select():
+            users.append([user.name, user.email,
+                          user.privilege, user.active])
+    return users
 
-# Int
 def get_num_users():
-    result = g.db.execute('SELECT COUNT(*) FROM users')
-    return result.fetchone()[0]
+    return User.select().count()
 
-# String, String, String, Datetime -> (Bool, Maybe Error)
 def insert_article(slug, title, content, posted):
     try:
-        g.db.execute('INSERT INTO posts \
-                      (slug, title, content, author, featured) \
-                      VALUES (?, ?, ?, "admin", 1)', [slug, title, content])
-        g.db.commit()
+        article = Post.get(Post.slug == slug)
+        return (False, 'Slug is taken')
+    except Post.DoesNotExist:
+        article = Post.create(
+            slug=slug,
+            title=title,
+            content=content,
+            author='admin',
+            featured=True
+        )
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
 
-# String, String, String, Datetime -> (Bool, Maybe Error)
 def update_article(slug, title, content, posted):
     try:
-        g.db.execute('UPDATE posts SET title=?, content=? \
-                      WHERE slug=?', [title, content, slug])
-        g.db.commit()
+        article = Post.get(Post.slug == slug)
+        article.title = title
+        article.content = content
+        article.save()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except Post.DoesNotExist:
+        return (False, "Article not found.")
 
-# String -> (Bool, Maybe Error)
 def delete_article(slug):
     try:
-        g.db.execute('DELETE FROM posts WHERE slug=?',
-                     [slug])
-        g.db.commit()
+        article = Post.get(Post.slug == slug)
+        article.delete_instance()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except Post.DoesNotExist:
+        return (False, "Article not found.")
 
-# String -> (Bool, Either List Error)
 def get_article(slug):
     try:
-        req = g.db.execute('SELECT title, content, posted FROM \
-                            posts WHERE slug=? AND featured=1', [slug])
-        article=req.fetchone()
-        if article:
-            return (True, article)
-        else:
-            return (False, "No article with that slug.")
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+        article = Post.select().where(Post.slug == slug).get()
+        return (True, [article.title, article.content,
+                       article.posted])
+    except Post.DoesNotExist:
+        return (False, "Article not found")
 
-# (Int, Int) -> List
 def get_articles(limit=None):
+    articles = []
     if limit:
-        req = g.db.execute('SELECT title, slug, content, posted FROM \
-                            posts WHERE featured=1 \
-                            ORDER BY posted DESC LIMIT ?, ?',
-                           [limit[0], limit[1]])
+        for article in Post.select().where(Post.featured == True).offset(limit[0]).limit(limit[1] - limit[0]):
+            articles.append([article.title, article.slug,
+                             article.content, article.posted])
     else:
-        req = g.db.execute('SELECT title, slug, content, posted \
-                            FROM posts WHERE featured=1 \
-                            ORDER BY posted DESC')
-    return req.fetchall()
+        for article in Post.select().where(Post.featured == True):
+            articles.append([article.title, article.slug,
+                             article.content, article.posted])
+    return articles
 
-# Int
 def get_num_articles():
-    result = g.db.execute('SELECT COUNT(*) FROM posts WHERE featured=1')
-    return result.fetchone()[0]
+    return Post.select().where(Post.featured == True).count()
 
-# String, String, String -> (Bool, Maybe Error)
 def insert_page(slug, title, content):
     try:
-        g.db.execute('INSERT INTO pages (slug, title, content) \
-                      VALUES (?, ?, ?)', [slug, title, content])
-        g.db.commit()
+        page = Page.get(Page.slug == slug)
+        return (False, 'Slug is taken')
+    except Page.DoesNotExist:
+        page = Page.create(
+            slug=slug,
+            title=title,
+            content=content
+        )
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
 
-# String, String, String -> (Bool, Maybe Error)
 def update_page(slug, title, content):
     try:
-        g.db.execute('UPDATE pages SET title=?, content=? \
-                      WHERE slug=?', [title, content, slug])
-        g.db.commit()
+        page = Page.get(Page.slug == slug)
+        page.title = title
+        page.content = content
+        page.save()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except Page.DoesNotExist:
+        return (False, "Page not found.")
 
-# String -> (Bool, Maybe Error)
 def delete_page(slug):
     try:
-        g.db.execute('DELETE FROM pages WHERE slug=?',
-                     [slug])
-        g.db.commit()
+        page = Page.get(Page.slug == slug)
+        page.delete_instance()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
-
-# String -> (Bool, Either List Error)
+    except Page.DoesNotExist:
+        return (False, "Page not found.")
+        
 def get_page(slug):
     try:
-        req = g.db.execute('SELECT title, content FROM \
-                            pages WHERE slug=?', [slug])
-        page=req.fetchone()
-        if page:
-            return (True, page)
-        else:
-            return (False, "No page with that slug.")
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+        page = Page.select().where(Page.slug == slug).get()
+        return (True, [page.title, page.content])
+    except Page.DoesNotExist:
+        return (False, "Page not found")
 
-# (Int, Int) -> List
 def get_pages(limit=None):
+    pages = []
     if limit:
-        req = g.db.execute('SELECT title, slug, content FROM \
-                            pages ORDER BY title ASC LIMIT ?, ?',
-                           [limit[0], limit[1]])
+        for page in Page.select().offset(limit[0]).limit(limit[1] - limit[0]):
+            pages.append([page.title, page.slug, page.content])
     else:
-        req = g.db.execute('SELECT title, slug, content FROM pages \
-                            ORDER BY title ASC')
-    return req.fetchall()
+        for page in Page.select():
+            pages.append([page.title, page.slug, page.content])
+    return pages
 
-# Int
 def get_num_pages():
-    result = g.db.execute('SELECT COUNT(*) FROM pages')
-    return result.fetchone()[0]
+    return Page.select().count()
 
-# String, String, String, Datetime, Int, Bool -> (Bool, Maybe Error)
 def insert_post(title, content, author, posted, parent, pinned):
-    try:
-        g.db.execute('INSERT INTO posts \
-                      (title, content, author, parent, pinned) \
-                      VALUES (?, ?, ?, ?, ?)',
-                     [title, content, author, parent, pinned])
-        g.db.commit()
-        return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    post = Post.create(
+        title=title,
+        content=content,
+        author=author,
+        parent=parent,
+        pinned=pinned
+    )
+    return (True, None)
 
-# Int, String, String, Bool -> (Bool, Maybe Error)
 def update_post(post_id, title, content, lock, pinned):
     try:
-        g.db.execute('UPDATE posts SET title=?, \
-                      content=?, locked=?, pinned=? \
-                      WHERE id=?', [title, content, lock, pinned, post_id])
-        g.db.commit()
+        post = Post.get(Post.post_id == post_id)
+        post.title = title
+        post.content = content
+        post.locked = lock
+        post.pinned = pinned
+        post.save()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except Post.DoesNotExist:
+        return (False, "Post not found.")
 
-# String -> (Bool, Maybe Error)
 def delete_post(post_id):
     try:
-        g.db.execute('DELETE FROM posts WHERE id=?',
-                     [post_id])
-        g.db.commit()
+        post = Post.get(Post.post_id == post_id)
+        post.delete_instance()
         return (True, None)
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+    except Post.DoesNotExist:
+        return (False, "Post not found.")
 
-# String -> (Bool, Either List Error)
 def get_post(post_id):
     try:
-        req = g.db.execute('SELECT \
-                            id, title, content, author, \
-                            posted, parent, locked, pinned \
-                            FROM posts WHERE id=?', [post_id])
-        post =req.fetchone()
-        if post:
-            return (True, post)
+        post = Post.select().where(Post.post_id == post_id).get()
+        if post.parent:
+            parent_id = post.parent.post_id
         else:
-            return (False, "No post with that id.")
-    except sqlite3.Error as e:
-        return (False, "An error occurred: " + e.args[0])
+            parent_id = None
+        return (True, [post_id, post.title, post.content, post.author.name, 
+                       post.posted, parent_id, post.locked,
+                       post.pinned])
+    except Post.DoesNotExist:
+        return (False, "Post not found")
 
-# (Int, Int), Maybe Int, Either DESC ASC -> List
 def get_posts(limit=None, parent=False, order='DESC'):
-    if not order == 'DESC' and not order == 'ASC':
-        order = 'DESC'
-    if limit and parent is not False:
-        req = g.db.execute('SELECT \
-                            id, title, content, author, \
-                            posted, locked, pinned \
-                            FROM posts WHERE parent IS ? \
-                            ORDER BY pinned DESC, posted ' + order + 
-                           ' LIMIT ?, ?',
-                           [parent, limit[0], limit[1]])
-    elif parent is not False:
-        req = g.db.execute('SELECT \
-                            id, title, content, author, \
-                            posted, locked, pinned \
-                            FROM posts WHERE parent IS ? \
-                            ORDER BY pinned DESC, posted ' + order,
-                           [parent])
+    posts = []
+    if limit and parent is not False and order is 'ASC':
+        query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).where(Post.parent >> parent).order_by(Post.posted.asc)
+    elif limit and parent is not False:
+        query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).where(Post.parent >> parent)
+    elif limit and order is 'ASC':
+        query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).order_by(Post.posted.asc)
+    elif parent is not False and order is 'ASC':
+        query = Post.select().where(Post.parent >> parent).order_by(Post.posted.asc)
     elif limit:
-        req = g.db.execute('SELECT \
-                            id, title, content, author, \
-                            posted, locked, pinned \
-                            FROM posts ORDER BY pinned DESC, posted ' +
-                           order + ' LIMIT ?, ?',
-                           [limit[0], limit[1]])
+        query = Post.select().offset(limit[0]).limit(limit[1] - limit[0])
+    elif parent is not False:
+        query = Post.select().where(Post.parent >> parent)
+    elif order is 'ASC':
+        query = Post.select().order_by(Post.posted.asc)
     else:
-        req = g.db.execute('SELECT \
-                            id, title, content, author, \
-                            posted, locked, pinned \
-                            FROM posts ORDER BY pinned DESC, posted ' + order)
-    return req.fetchall()
+        query = Post.select()
+    for post in query:
+        posts.append([post.post_id, post.title, post.content,
+                      post.author.name, post.posted, post.locked,
+                      post.pinned])
+    return posts
 
-# Maybe Int -> Int
-def get_num_posts(parent=None):
-    result = g.db.execute('SELECT COUNT(*) FROM posts WHERE parent IS ?',
-                          [parent])
-    return result.fetchone()[0]
+def get_num_posts(parent=False):
+    if parent is False:
+        return Post.select().count()
+    else:
+        return Post.select().where(Post.parent == parent).count()
