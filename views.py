@@ -7,12 +7,30 @@ from datetime import timedelta
 def before_request():
     g.db = database.connect_db()
     g.db.get_conn().set_client_encoding('UTF8')
+    if not user.is_logged_in():
+        token = user.auto_log_in()
+        if token:
+            after_this_request(
+                lambda r: r.set_cookie('persist_token',token)
+            )
 
 @app.teardown_request
 def teardown_request(exception):
     db = getattr(g, 'db', None)
     if db is not None:
         db.close()
+
+def after_this_request(f):
+    if not hasattr(g, 'after_request_callbacks'):
+        g.after_request_callbacks = []
+    g.after_request_callbacks.append(f)
+    return f
+
+@app.after_request
+def call_after_request_callbacks(response):
+    for callback in getattr(g, 'after_request_callbacks', ()):
+        callback(response)
+    return response
 
 @app.route('/', defaults={'page': 1})
 @app.route('/news/<int:page>')
@@ -240,6 +258,8 @@ def login():
         if result[0]:
             user.log_in(request.form['username'],
                         result[1][0], result[1][1], result[1][2])
+            if request.form.get('remember', False):
+                after_this_request(user.persist_login)
             flash('You have been logged in')
             return redirect(url_for('display_news'))
         else:
@@ -249,6 +269,11 @@ def login():
 @app.route('/logout')
 def logout():
     user.log_out()
+    @after_this_request
+    def delete_cookies(response):
+        response.set_cookie('persist_name', '', expires=0)
+        response.set_cookie('persist_token', '', expires=0)
+        response.set_cookie('persist_id', '', expires=0)
     flash('You have been logged out')
     return redirect(url_for('display_news'))
 

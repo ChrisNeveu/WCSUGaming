@@ -9,6 +9,7 @@ def init_db():
     User.create_table()
     Page.create_table()
     Post.create_table()
+    P_Session.create_table()
     admin = User.create(
         name='admin',
         password=bcrypt.hashpw('password', bcrypt.gensalt()),
@@ -71,6 +72,11 @@ class Post(BaseModel):
     class Meta:
         order_by = ('-posted',)
 
+class P_Session(BaseModel):
+    user_name = pw.ForeignKeyField(User, related_name='user')
+    series_id = pw.CharField()
+    token = pw.CharField()
+
 def validate_user(username, password):
     try:
         user = User.get(User.name == username)
@@ -129,8 +135,8 @@ def delete_user(username):
 def get_user(username):
     try:
         user = User.select().where(User.name == username).get()
-        return (True, [user.name, user.email,
-                       user.privilege, user.active])
+        return (True, [user.name, user.email, user.privilege,
+                       user.active, user.last_login])
     except User.DoesNotExist:
         return (False, "User not found")
 
@@ -326,3 +332,34 @@ def get_num_posts(parent=False):
         return Post.select().count()
     else:
         return Post.select().where(Post.parent == parent).count()
+
+def insert_persist_login(name, token, series_id):
+    login = P_Session.create(
+        user_name=name,
+        token=token,
+        series_id=series_id
+    )
+    return (True, None)
+
+def get_persist_logins(name):
+    logins = []
+    for login in P_Session.select().where(P_Session.user_name == name):
+        logins.append((name, login.token, login.series_id))
+    return logins
+
+def update_persist_login(token, new_token):
+    try:
+        login = P_Session.get(P_Session.token == token)
+        login.token = new_token
+        login.save()
+        return (True, None)
+    except P_Session.DoesNotExist:
+        return (None, None, None)
+
+def delete_persist_login(series_id):
+    try:
+        login = P_Session.get(P_Session.series_id == series_id)
+        login.delete_instance()
+        return (True, None)
+    except P_Session.DoesNotExist:
+        return (False, 'Login not found.')
