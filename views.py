@@ -5,7 +5,7 @@ from datetime import timedelta
 
 @app.before_request
 def before_request():
-    g.db = database.connect_db()
+    g.db = database.db
     g.db.get_conn().set_client_encoding('UTF8')
     if not user.is_logged_in():
         token = user.auto_log_in()
@@ -255,6 +255,7 @@ def login():
     if request.method == 'POST':
         result = database.validate_user(request.form['username'],
                                         request.form['password'])
+        print(result)
         if result[0]:
             user.log_in(request.form['username'],
                         result[1][0], result[1][1], result[1][2])

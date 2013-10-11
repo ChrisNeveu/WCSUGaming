@@ -42,12 +42,13 @@ class User(BaseModel):
         order_by = ('name',)
 
     def validate(self, passw):
+        print(passw, '%%%', self.password)
         if not self.active:
-            return (False, "User not activated")
+            return False
         if bcrypt.hashpw(passw, self.password) == self.password:
-            return (True, None)
+            return True
         else:
-            return (False, "Incorrect Password")
+            return False
 
 class Page(BaseModel):
     slug = pw.CharField(primary_key=True)
@@ -80,6 +81,7 @@ class P_Session(BaseModel):
 def validate_user(username, password):
     try:
         user = User.get(User.name == username)
+        print('test: ', user.validate(password))
         if not user.active:
             return (False, "User not activated")
         if user.validate(password):
@@ -305,18 +307,24 @@ def get_post(post_id):
 
 def get_posts(limit=None, parent=False, order='DESC'):
     posts = []
-    if limit and parent is not False and order is 'ASC':
+    if limit and parent is None and order is 'ASC':
         query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).where(Post.parent >> parent).order_by(Post.posted.asc)
-    elif limit and parent is not False:
+    elif limit and parent is not False and order is 'ASC':
+        query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).where(Post.parent == parent).order_by(Post.posted.asc)
+    elif limit and parent is None:
         query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).where(Post.parent >> parent)
+    elif limit and parent is not False:
+        query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).where(Post.parent == parent)
     elif limit and order is 'ASC':
         query = Post.select().offset(limit[0]).limit(limit[1] - limit[0]).order_by(Post.posted.asc)
     elif parent is not False and order is 'ASC':
         query = Post.select().where(Post.parent >> parent).order_by(Post.posted.asc)
     elif limit:
         query = Post.select().offset(limit[0]).limit(limit[1] - limit[0])
-    elif parent is not False:
+    elif parent is None:
         query = Post.select().where(Post.parent >> parent)
+    elif parent is not False:
+        query = Post.select().where(Post.parent == parent)
     elif order is 'ASC':
         query = Post.select().order_by(Post.posted.asc)
     else:
